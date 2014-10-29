@@ -2,11 +2,13 @@
 % Chris Allen
 % October 30, 2014
 
+
 # Functors
 
 - We're going to talk about functors before moving on to monads and monad transformers
 
 - You always have a functor and an applicative functor whenever you have a monad
+
 
 # What's a functor?
 
@@ -21,6 +23,7 @@ Plus the laws:
 fmap id  ==  id
 fmap (f . g)  ==  fmap f . fmap g
 ```
+
 
 # Why do laws matter?
 
@@ -37,6 +40,7 @@ fmap (f . g)  ==  fmap f . fmap g
 ```
 
 Without these laws, we can assume very little about what fmap does.
+
 
 # What does this mean for us?
 
@@ -59,6 +63,7 @@ Prelude> fmap ((*2) . (+1)) myList
 [4,6,8]
 ```
 
+
 # What's fmap, really?
 
 Lets shift the parentheses a bit. Since the type constructor for functions `->` is right associative, the following re-parenthesization is correct.
@@ -76,6 +81,7 @@ To:
 ```
 
 There are a few ways to describe this. One is that we're lifting `(a -> b)` into the environment `f`. Another is that we're mapping `(a -> b)` over `f`. Mostly this does not matter as long as you don't confuse the map with the territory.
+
 
 # List functor
 
@@ -99,6 +105,7 @@ Prelude> fmap (+1) []
 []
 ```
 
+
 # Maybe functor
 
 Maybe
@@ -120,6 +127,7 @@ Prelude> fmap (+1) Nothing
 Nothing
 ```
 
+
 # Kinds and types
 
 Kinds are types "one level up". We use them to describe the structure of type constructors.
@@ -129,6 +137,7 @@ Kinds are types "one level up". We use them to describe the structure of type co
 Int, Float, Char are all kind `*`.
 
 Lists, `[]`, are kind `* -> *` because they need a type before they can become real values. Once that type argument is applied, then it's a real type.
+
 
 # A mechanical demonstration of kinds
 
@@ -144,6 +153,7 @@ Prelude> :k Trivial1
 Trivial1 :: * -> *
 ```
 
+
 # A mechanical demonstration of kinds
 
 The terms, in this case a nullary constructor named "Trivial", don't matter for the purposes of this demonstration.
@@ -157,6 +167,7 @@ Prelude> data Trivial3 a b c = Trivial
 Prelude> :k Trivial3
 Trivial3 :: * -> * -> * -> *
 ```
+
 
 # Kinds of day to day types
 
@@ -179,6 +190,7 @@ Prelude> :kind Either
 Either :: * -> * -> *
 ```
 
+
 # Functor and its kind
 
 One thing to note about the definition of functor is that it applies the type `f` to an argument `a` in the typeclass.
@@ -188,9 +200,140 @@ class Functor f where
   fmap :: (a -> b) -> f a -> f b
 ```
 
-Since we have kind inference in Haskell (unlike say, Scala), Haskell is able to infer that `f` needs to be kind `* -> *` based on the fact that it gets applied to a single type argument.
+Since we have kind inference in Haskell (unlike say, Scala), Haskell is able to infer that `f` needs to be kind `* -> *` based on the fact that it gets applied to a single type argument `a`.
+
+
+# Functor and its kind
+
+To prove my point, let me demonstrate something that won't work.
+
+```haskell
+module Blah where
+
+instance Functor Either where
+  fmap = undefined
+```
+
+
+# Functor and its kind
+
+```
+Prelude> :l bad_code.hs
+Expecting one more argument to ‘Either’
+The first argument of ‘Functor’ should have
+   kind ‘* -> *’,
+   but ‘Either’ has kind ‘* -> * -> *’
+In the instance declaration for ‘Functor Either’
+```
+
+(slightly edited to accommodate slide limitations)
+
+
+# Functor and its kind
+
+It doesn't matter that I stubbed out the implementation of `fmap` with `undefined` (useful trick btw), Either *cannot* implement Functor. But the kind is `* -> * -> *`.
+
+If Either is a type constructor that behaves like a function at the type level, we can we do with functions to get from `* -> * -> *` to `* -> *` ?
+
+
+# Fixing Either so we can get a Functor
+
+We *apply* it! Talking a `Functor` for `Either` doesn't make any sense, but it does for `(Either a)`!
+
+
+# Fixing Either so we can get a Functor
+
+This changes our code to the following.
+
+```haskell
+instance Functor (Either a) where
+  fmap = undefined
+```
+
+Now it'll type-check.
+
+
+# Type variable scope
+
+Ordinarily the `Functor` for `Either` maps over the contents of the `Right` data constructor. What happens
+if we write a typeclass that maps over the `Left`?
+
+
+# Either that maps over the Left
+
+```haskell
+{-# LANGUAGE NoImplicitPrelude #-}
+
+module Blah where
+
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+
+data Either a b = Left a | Right b
+
+instance Functor (Either a) where
+  fmap f (Left a)  = Left (f a)
+  fmap _ (Right b) = Right b
+```
+
+
+# Either that maps over the Left
+
+If you attempt the previous slide's code, you'll get the following type error (heavily abridged):
+
+```
+Couldn't match expected type ‘a’ with actual type ‘b’
+```
+
+What does this mean? It means it expected `a` based on our terms but the types based on definition mean it needs to be `b`.
+
+
+# Why did it expect b?
+
+```haskell
+data Either a b = Left a | Right b
+
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+
+instance Functor (Either a) where
+
+Either a == f
+
+a in f a == b in Either a b
+```
+
+
+# How to make a left-biased Either work
+
+```haskell
+{-# LANGUAGE NoImplicitPrelude #-}
+
+module Blah where
+
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+
+data Either b a = Left a | Right b
+
+instance Functor (Either a) where
+  fmap f (Left a)  = Left (f a)
+  fmap _ (Right b) = Right b
+```
 
 # Function functor
+
+`a -> b` is kind `* -> * -> *` because it has two type variables `a` and `b`. The first type variable is the argument type.
+
+Thus, a `Functor` instance for `a -> b` must be changing the result type, rather than the argument type because that'll be the unbound type variable when `(->)` is partially applied. This gives us the following Functor instance:
+
+```haskell
+instance Functor ((->) a) where
+  fmap = (.)
+```
+
+It's just function composition.
+
 
 # Weaker and stronger algebras
 
@@ -200,7 +343,85 @@ Since we have kind inference in Haskell (unlike say, Scala), Haskell is able to 
 
 - But a weaker algebra means fewer derived operations...fewer things you can do with it.
 
+
+# Monad
+
+Typeclass definition
+
+```haskell
+class Monad f where
+   (>>=) :: (a -> m b) -> m a -> m b
+```
+
+Laws
+
+```haskell
+return a >>= k  =  k a
+m >>= return  =  m
+m >>= (\x -> k x >>= h)  =  (m >>= k) >>= h
+```
+
+And since `Monad` builds on top of `Functor`
+
+```haskell
+fmap f xs  ==  xs >>= return . f
+```
+
+Not a semicolon.
+
+# Examples of monads
+
+List monad
+
+```haskell
+-- since m here is []
+(>>=) :: (a -> [b]) -> [a] -> [b]
+```
+
+Maybe monad
+
+```haskell
+-- since m is Maybe
+(a -> Maybe b) -> Maybe a -> Maybe b
+```
+
+# Examples of monads
+
+List monad
+
+```haskell
+instance Monad [] where
+  xs >>= f = foldr ((++) . f) [] xs
+```
+
+Maybe monad
+
+```haskell
+instance Monad Maybe where
+  a >>= f = case a of
+              Just x  = f x
+              Nothing = Nothing
+```
+
+# Examples of monads
+
+Reader (function)
+
+```haskell
+-- applying the argument type again
+instance Monad ((->) t) where
+  f >>= g = \x -> f (g x) x
+```
+
+# Nesting data types
+
+What if I glue two functors, [] and Maybe together?
+
+```haskell
+```
+
 # Compose
 
 ```haskell
+
 ```
