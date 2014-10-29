@@ -543,3 +543,45 @@ f1 n =
 > maybeT (bind f1 m1)
 [Just 1, Just 50, Just 2, Just 100, Just 30, Nothing]
 ```
+
+# Example using Reader and Maybe
+
+```haskell
+m2 :: MaybeT ((->) Integer) String
+m2 = MaybeT (\x ->
+        if even x
+           then Just (show (x * 10))
+           else Nothing
+
+f2 :: String -> MaybeT ((->) Integer) String
+f2 s = MaybeT (\n ->
+          if n < 100
+            then Just (show n ++ s)
+            else Nothing)
+```
+
+-----
+
+```haskell
+> map (maybeT (bind f2 m2)) [3, 4, 700]
+[Nothing, Just "440", Nothing]
+```
+
+# Other monad transformers
+
+```haskell
+MaybeT  f a   = f (Maybe a)
+EitherT f a b = f (Either a b)
+ReaderT f a b = a -> f b
+StateT  f s a = f (a, s)
+```
+
+Each exists because *moands do not compose in general*.
+
+# Functor transformers don't even real
+
+Functor compose so what's the point?
+
+- Comonad transformers exist
+
+- Applicative transformers do not exist
