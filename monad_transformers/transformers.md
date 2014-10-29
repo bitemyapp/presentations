@@ -585,3 +585,26 @@ Functor compose so what's the point?
 - Comonad transformers exist
 
 - Applicative transformers do not exist
+
+# Identity
+
+```haskell
+newtype Identity a = Identity { runIdentity :: a }
+    deriving (Eq, Ord)
+
+instance Functor Identity where
+    fmap f m = Identity (f (runIdentity m))
+
+instance Monad Identity where
+    return a = Identity a
+    m >>= k  = k (runIdentity m)
+```
+
+# Identity Monad gets you back to the non-transformer version
+
+```haskell
+MaybeT  Identity a   = Maybe  a
+EitherT Identity a b = Either a b
+ReaderT Identity a b = a -> Identity b
+StateT  Identity s a = Identity (a, s)
+```
