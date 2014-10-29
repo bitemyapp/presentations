@@ -350,21 +350,7 @@ Typeclass definition
 
 ```haskell
 class Monad f where
-   (>>=) :: (a -> m b) -> m a -> m b
-```
-
-Laws
-
-```haskell
-return a >>= k  =  k a
-m >>= return  =  m
-m >>= (\x -> k x >>= h)  =  (m >>= k) >>= h
-```
-
-And since `Monad` builds on top of `Functor`
-
-```haskell
-fmap f xs  ==  xs >>= return . f
+   bind :: (a -> m b) -> m a -> m b
 ```
 
 Not a semicolon.
@@ -375,7 +361,7 @@ List monad
 
 ```haskell
 -- since m here is []
-(>>=) :: (a -> [b]) -> [a] -> [b]
+bind :: (a -> [b]) -> [a] -> [b]
 ```
 
 Maybe monad
@@ -391,16 +377,16 @@ List monad
 
 ```haskell
 instance Monad [] where
-  xs >>= f = foldr ((++) . f) [] xs
+  bind f xs = foldr ((++) . f) [] xs
 ```
 
 Maybe monad
 
 ```haskell
+-- maybe :: b -> (a -> b) -> Maybe a -> b
+
 instance Monad Maybe where
-  a >>= f = case a of
-              Just x  = f x
-              Nothing = Nothing
+  bind f a = maybe Nothing f a
 ```
 
 # Examples of monads
@@ -410,7 +396,7 @@ Reader (function)
 ```haskell
 -- applying the argument type again
 instance Monad ((->) t) where
-  f >>= g = \x -> f (g x) x
+  bind f g = \x -> f (g x) x
 ```
 
 # Nesting data types
@@ -418,10 +404,113 @@ instance Monad ((->) t) where
 What if I glue two functors, [] and Maybe together?
 
 ```haskell
+value :: [Maybe a]
+```
+
+and I want to map a function f :: a -> b
+
+```haskell
+result :: [Maybe b]
+result f = fmap (fmap f) value
+```
+
+# Mapping on a (f of g)
+
+You can do this for any two functors:
+
+```haskell
+value :: f (g a)
+```
+
+to map a function f :: a -> b
+
+```haskell
+result :: f (g b)
+result f = fmap (fmap f) value
 ```
 
 # Compose
 
+If f and g are functors, then (f of g) is a functor:
+
 ```haskell
 
+data Compose f g x = Compose (f (g x))
+
+instance (Functor f, Functor g) =>
+  Functor (Compose f g) where
+  fmap f (Compose z) = Compose (fmap (fmap f) z)
+```
+
+# Compose
+
+The composition of two arbitrary functors makes a new functor. Put briefly, *functors compose*.
+
+# Two monads
+
+if I glue two monads, [] and Maybe together:
+
+```haskell
+value :: [Maybe a]
+```
+
+and I want to bind a function f :: a -> [Maybe b]:
+
+```haskell
+result :: [Maybe b]
+result f = bind (maybe (return Nothing) f) value
+```
+
+# Two monads
+
+We called bind on a list
+
+```haskell
+result f = bind (maybe (return Nothing) f) value
+           ^     ^
+```
+
+but we destructured the Maybe using Maybe-specific calls
+
+# Can we compose monads?
+
+If f and g are monads, then is (f of g) a monad?
+
+Can we generalize?
+
+```haskell
+instance (Monad f, Monad g) =>
+  Monad (Compose f g) where
+  bind = error "???"
+```
+
+# Nope
+
+It's impossible, but I would invite you to try anyway as a learning exercise.
+
+# If we know one monad
+
+We *can* bind on (f on Maybe) for any monad f.
+
+```haskell
+result :: Monad f =>
+          (a -> f (Maybe b))
+          -> f (Maybe a)
+          -> f (Maybe b)
+result = bind (maybe (return Nothing) f) value
+```
+
+# The Maybe monad transformer
+
+```haskell
+data MaybeT f a = MaybeT {
+  maybeT :: f (Maybe a)
+}
+
+instance Monad f => Monad (MaybeT f) where
+  bind f (MaybeT x) =
+    MaybeT (bind
+              (maybe (return Nothing)
+                (maybeT . f)) x
+                )
 ```
