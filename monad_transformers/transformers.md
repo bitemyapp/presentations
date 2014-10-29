@@ -603,8 +603,8 @@ instance Monad Identity where
 # Identity Monad gets you back to the non-transformer version
 
 ```haskell
-MaybeT  Identity a   = Maybe  a
-EitherT Identity a b = Either a b
+MaybeT  Identity a   = Identity (Maybe  a)
+EitherT Identity a b = Identity (Either a b)
 ReaderT Identity a b = a -> Identity b
 StateT  Identity s a = Identity (a, s)
 ```
