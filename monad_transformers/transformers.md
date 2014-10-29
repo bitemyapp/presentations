@@ -514,3 +514,32 @@ instance Monad f => Monad (MaybeT f) where
                 (maybeT . f)) x
                 )
 ```
+
+# The Maybe monad transformer
+
+Provides the construction of the monad for (f of Maybe) for an arbitrary
+monad f. Its behavior combines the individual monads of Maybe then f, in that order.
+
+This transformer exists because *Monads do not compose in general*.
+
+# Example using List and Maybe
+
+```haskell
+m1 :: MaybeT [] Integer
+m1 = MaybeT [Just 1, Just 2, Just 30]
+
+f1 :: Integer -> MaybeT [] Integer
+f1 n =
+   MaybeT
+     [
+       Just n
+     , if n < 10 then Just (n * 50) else Nothing
+     ]
+```
+
+-----
+
+```haskell
+> maybeT (bind f1 m1)
+[Just 1, Just 50, Just 2, Just 100, Just 30, Nothing]
+```
