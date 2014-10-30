@@ -27,13 +27,13 @@ fmap (f . g)  ==  fmap f . fmap g
 
 # Why do laws matter?
 
-This law is usually called "identity".
+This law is usually called "identity". This is also about structure preservation.
 
 ```haskell
 fmap id == id
 ```
 
-And this one is about associativity. You'll recall that arithmetic operations associate.
+And this one is about compositionality. Without this, we don't have code we can compose safely.
 
 ```haskell
 fmap (f . g)  ==  fmap f . fmap g
@@ -54,7 +54,7 @@ Prelude> fmap id myList
 [1,2,3]
 ```
 
-Associativity
+Composing
 
 ```haskell
 Prelude> fmap (*2) . fmap (+1) $ myList
@@ -238,7 +238,7 @@ If Either is a type constructor that behaves like a function at the type level, 
 
 # Fixing Either so we can get a Functor
 
-We *apply* it! Talking a `Functor` for `Either` doesn't make any sense, but it does for `(Either a)`!
+We *apply* it! Talking about a `Functor` for `Either` doesn't make any sense, but it does for `(Either a)`!
 
 
 # Fixing Either so we can get a Functor
@@ -254,6 +254,10 @@ Now it'll type-check.
 
 
 # Type variable scope
+
+```haskell
+data Either a b = Left a | Right b
+```
 
 Ordinarily the `Functor` for `Either` maps over the contents of the `Right` data constructor. What happens
 if we write a typeclass that maps over the `Left`?
@@ -282,7 +286,8 @@ instance Functor (Either a) where
 If you attempt the previous slide's code, you'll get the following type error (heavily abridged):
 
 ```
-Couldn't match expected type ‘a’ with actual type ‘b’
+Couldn't match expected type ‘a’ with
+actual type ‘b’
 ```
 
 What does this mean? It means it expected `a` based on our terms but the types based on definition mean it needs to be `b`.
@@ -350,7 +355,7 @@ Typeclass definition
 
 ```haskell
 class Monad f where
-   bind :: (a -> m b) -> m a -> m b
+   bind :: (a -> f b) -> f a -> f b
 ```
 
 Not a semicolon.
@@ -457,8 +462,11 @@ value :: [Maybe a]
 and I want to bind a function f :: a -> [Maybe b]:
 
 ```haskell
+
+-- return :: a -> m a
 result :: [Maybe b]
 result f = bind (maybe (return Nothing) f) value
+--                       ^^ turns Maybe b into [Maybe b]
 ```
 
 # Two monads
@@ -484,10 +492,22 @@ instance (Monad f, Monad g) =>
   bind = error "???"
 ```
 
-# Nope
+# Can we compose monads?
 
-It's impossible, but I would invite you to try anyway as a learning exercise.
+You *can* compose monads, but the result is not guaranteed to be a monad. When you compose functors and applicatives, you are guaranteed to get a functor and an applicative respectively.
 
+But if you wanted to try to write a `Monad` instance for Compose you'd find it impossible to do so because the two Monad instances are polymorphic.
+
+You'd want this type:
+
+```haskell
+:: (Monad m, Monad n) => m (n s)
+                      -> (s -> m (n t))
+                      -> m (n t)
+```
+<br>
+(this is impossible, give it a whack if you want)
+ 
 # If we know one monad
 
 We *can* bind on (f on Maybe) for any monad f.
@@ -520,7 +540,7 @@ instance Monad f => Monad (MaybeT f) where
 Provides the construction of the monad for (f of Maybe) for an arbitrary
 monad f. Its behavior combines the individual monads of Maybe then f, in that order.
 
-This transformer exists because *Monads do not compose in general*.
+This transformer exists because the composition of monads without specific knowledge of at least one of them doesn't give rise to a monad *in general*.
 
 # Example using List and Maybe
 
@@ -537,14 +557,13 @@ f1 n =
      ]
 ```
 
------
-
 ```haskell
 > maybeT (bind f1 m1)
-[Just 1, Just 50, Just 2, Just 100, Just 30, Nothing]
+[Just 1, Just 50, Just 2,
+ Just 100, Just 30, Nothing]
 ```
 
-# Example using Reader and Maybe
+# Using Reader and Maybe
 
 ```haskell
 m2 :: MaybeT ((->) Integer) String
@@ -560,8 +579,6 @@ f2 s = MaybeT (\n ->
             else Nothing)
 ```
 
------
-
 ```haskell
 > map (maybeT (bind f2 m2)) [3, 4, 700]
 [Nothing, Just "440", Nothing]
@@ -576,7 +593,7 @@ ReaderT f a b = a -> f b
 StateT  f s a = f (a, s)
 ```
 
-Each exists because *moands do not compose in general*.
+Each exists because the composition of monads are not guaranteed to give you a new monad.
 
 # Functor transformers don't even real
 
