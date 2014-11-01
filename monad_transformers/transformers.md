@@ -623,5 +623,5 @@ instance Monad Identity where
 MaybeT  Identity a   = Identity (Maybe  a)
 EitherT Identity a b = Identity (Either a b)
 ReaderT Identity a b = a -> Identity b
-StateT  Identity s a = Identity (a, s)
+StateT  Identity s a = Identity (s -> (a, s))
 ```
