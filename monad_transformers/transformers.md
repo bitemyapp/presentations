@@ -590,7 +590,7 @@ f2 s = MaybeT (\n ->
 MaybeT  f a   = f (Maybe a)
 EitherT f a b = f (Either a b)
 ReaderT f a b = a -> f b
-StateT  f s a = f (a, s)
+StateT  f s a = f (s -> (a, s))
 ```
 
 Each exists because the composition of monads are not guaranteed to give you a new monad.
