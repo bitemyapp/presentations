@@ -141,7 +141,7 @@ Lists, `[]`, are kind `* -> *` because they need a type before they can become r
 
 # A mechanical demonstration of kinds
 
-We can use Haskell to infer the kind of a type and tell us what it is in the REPL using `:kind`, oft abbreviated to `:k`.
+We can ask Haskell to infer the kind of a type and tell us what it is in the REPL using `:kind`, oft abbreviated to `:k`.
 
 ```haskell
 Prelude> data Trivial0 = Trivial
@@ -233,7 +233,7 @@ In the instance declaration for ‘Functor Either’
 
 It doesn't matter that I stubbed out the implementation of `fmap` with `undefined` (useful trick btw), Either *cannot* implement Functor. But the kind is `* -> * -> *`.
 
-If Either is a type constructor that behaves like a function at the type level, we can we do with functions to get from `* -> * -> *` to `* -> *` ?
+If Either is a type constructor that behaves like a function at the type level, what can we do with functions to get from `* -> * -> *` to `* -> *` ?
 
 
 # Fixing Either so we can get a Functor
