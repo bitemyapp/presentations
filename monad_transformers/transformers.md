@@ -141,7 +141,7 @@ Lists, `[]`, are kind `* -> *` because they need a type before they can become r
 
 # A mechanical demonstration of kinds
 
-We can Haskell to infer the kind of a type and tell us what it is in the REPL using `:kind`, oft abbreviated to `:k`.
+We can use Haskell to infer the kind of a type and tell us what it is in the REPL using `:kind`, oft abbreviated to `:k`.
 
 ```haskell
 Prelude> data Trivial0 = Trivial
