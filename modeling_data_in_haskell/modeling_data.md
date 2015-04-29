@@ -30,6 +30,32 @@ data Trivial = Trivial
 2. Data constructor - takes no arguments, thus "nullary"
 
 
+# Constructors?
+
+We use type constructors to refer to types by name in type signatures.
+
+```haskell
+f :: String -> String -> String
+f = ...doesn't matta...
+```
+
+Here we refer to the type `String` three times in our type signature, denoted syntactically by the double colon `::`
+
+We use data constructors to create values. There's some special syntax for built-in types like String, List, tuples, but in most cases you'll use a data constructor explicitly introduced by the datatype.
+
+
+# So which is which?
+
+```haskell
+data TrivialTypeConstructor
+  = TrivialDataConstructor
+```
+
+Rule of thumb: before the `=` is the type constructor, after the `=` are the data constructors.
+
+If there's a single data constructor, it'll often have the same name as the type constructor because types and values are strictly separated in Haskell.
+
+
 # How do we use our datatype with a single nullary data constructor?
 
 ```haskell
@@ -45,6 +71,7 @@ trivialityBegets _ = Trivial
 -- or
 trivialityBegets x = Trivial
 ```
+
 
 # Haskell datatype syntax
 
@@ -90,6 +117,24 @@ Without the argument existing for the data *and* the type constructor, we have n
 
 
 # Product
+
+What happens if you add another argument to a unary data constructor? Products!
+
+```haskell
+data Person = Person String Int
+```
+
+Product here can also be read to mean, "record" or "struct", but be careful with assumptions about representation. Here `Person` is a product of a `String` and an `Int`.
+
+
+# Person with record syntax
+
+```haskell
+data Person = Person { name = String
+                     , age = Int }
+```
+
+`Person` defined using record syntax for the fields.
 
 
 # Sum type
