@@ -1,3 +1,5 @@
 *.html
 .DS_Store
-
+*.aux
+*.log
+*.pdf

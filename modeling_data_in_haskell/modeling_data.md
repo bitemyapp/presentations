@@ -136,8 +136,129 @@ data Person = Person { name = String
 
 `Person` defined using record syntax for the fields.
 
+Using the field accessors:
+
+```haskell
+getName :: Person -> String
+getName p = name p
+
+-- eta reduce
+
+getName = name
+
+-- redundant
+```
+
+# Tuples
+
+Tuples are our "anonymous product", so called because we don't name anything. We could rewrite our `Person` type as:
+
+```haskell
+type Person = (String, Int)
+```
+
+The `type` keyword only creates type constructors, that is, aliases to other types with their own data constructors. You could refer to this value `("blah", 3)` has having type `Person`.
+
+
+# Nesting tuples
+
+You can also nest tuples. Given the product of `String` *and* `Int` *and* `Integer` *and* another `String` you could write that as:
+
+```haskell
+(String, (Int, (Integer, String)))
+```
+
+This is what makes the 2-tuple an anonymous universal product, that we can nest them.
+
+
+# Exercises
+
+Rewrite the following type into a nested two tuple:
+
+```haskell
+data Car = Car {
+             make :: CarMake
+           , model :: CarModel
+           , year :: CarYear
+           }
+```
+
+turns into:
+
+```haskell
+type Car = ???
+```
+
+
+# Exercises
+
+Given the functions:
+
+```haskell
+fst :: (a, b) -> a
+snd :: (a, b) -> b
+```
+
+Add the accessors back for your nested tuple type.
+
+```haskell
+make :: Car -> CarMake
+make = undefined
+
+model :: Car -> CarModel
+model = undefined
+
+year :: Car -> CarYear
+year = undefined
+```
+
 
 # Sum type
+
+The Bool datatype is defined as follows:
+
+```haskell
+data Bool = False | True
+```
+
+What we've done here is made it so two different data constructors are values of type `Bool`. Where `product` ~ *and*, `sum` ~ *or*.
+
+
+# We have an anonymous sum type too
+
+```haskell
+data Either a b = Left a | Right b
+```
+
+
+# Gettin' silly
+
+We could atomise `Bool` like so:
+
+```haskell
+data False' = False' deriving Show
+data True' = True' deriving Show
+
+type Bool' = Either False' True'
+```
+
+
+# Bonus
+
+It'll even type-check that you're not messing the order up:
+
+```
+Prelude> Right False' :: Bool'
+
+<interactive>:57:7:
+    Couldn't match expected type ‘True'’
+    with actual type ‘False'’
+    In the first argument of ‘Right’,
+    namely ‘False'’
+    In the expression: Right False' :: Bool'
+Prelude> Right True' :: Bool'
+Right True'
+```
 
 
 # Making the "algebra" in algebraic data types do work
@@ -145,7 +266,73 @@ data Person = Person { name = String
 - There's an actual set of operations here.
 
 ```haskell
+data Bool = False | True
 ```
+
+- False = 1
+- True = 1
+- | = +
+- Either also = +
+
+```haskell
+data Bool = False + True
+
+data Bool = 1 + 1
+Bool = 2 inhabitants
+```
+
+
+# Making the "algebra" in algebraic data types do work
+
+```haskell
+type Bool' = Either False' True'
+
+Either = +
+
+data False' = False'
+
+False' = 1
+True' = 1
+
+type Bool' = Either 1 1
+           = 1 + 1
+-- same as ordinary Bool
+-- we can say they are equivalent
+```
+
+# Making the "algebra" in algebraic data types do work
+
+Knowing how big your domain is important for knowing how comprehensible it is, as well as knowing how it relates
+
+(,) = *
+
+```haskell
+type DoesntMatter = (Bool, Bool)
+
+type DoesntMatter = Bool * Bool
+
+type DoesntMatter = 2 * 2
+
+type DoesntMatter = 4 inhabitants
+```
+
+
+# Exercises
+
+How many inhabitants does each type have?
+
+```haskell
+-- Word8 = 0-255
+
+import Data.Word
+
+type A = Either Word8 Bool
+
+type B = (Word8, Bool)
+
+type C = Either (Bool, Word8) (Word8, Bool)
+```
+
 
 # Don't do this
 
@@ -158,3 +345,54 @@ data CarType = Null |
                    , state :: [Float]
                    } deriving (Show,Eq)
 ```
+
+
+# Why?
+
+Because it's redundant, obnoxious, and it introduces partial functions. Don't mix record syntax and sum types!
+
+Partial what? Partial functions are functions that have inputs for which they don't have answers.
+
+```
+data Example = Null
+             | Example {
+               blah :: Int
+               } deriving Show
+Prelude> blah $ Example 10
+10
+Prelude> blah $ Null
+*** Exception: No match in record selector blah
+```
+
+
+# Pls no.
+
+`Maybe` exists, use it!
+
+```haskell
+data Maybe a = Nothing | Just a
+```
+
+If you have a function that might not be able to return a sensible `CarType`, return `Maybe CarType`!
+
+
+# Cleaning up our datatypes
+
+This isn't great.
+
+```haskell
+data Hero =
+  Hero {
+    class :: String
+  , race :: String
+  , statusEffects :: [String]
+  , inventory :: Map String Int
+  } deriving Show
+```
+
+You're not getting a lot of mileage out of the type system when you do this.
+
+
+# Exercise
+
+Tell me how to fix the `Hero` datatype.
