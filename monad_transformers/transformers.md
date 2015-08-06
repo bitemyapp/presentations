@@ -590,7 +590,7 @@ f2 s = MaybeT (\n ->
 MaybeT  f a   = f (Maybe a)
 EitherT f a b = f (Either a b)
 ReaderT f a b = a -> f b
-StateT  f s a = f (s -> (a, s))
+StateT  f s a = s -> f (a, s)
 ```
 
 Each exists because the composition of monads are not guaranteed to give you a new monad.
@@ -623,5 +623,5 @@ instance Monad Identity where
 MaybeT  Identity a   = Identity (Maybe  a)
 EitherT Identity a b = Identity (Either a b)
 ReaderT Identity a b = a -> Identity b
-StateT  Identity s a = Identity (s -> (a, s))
+StateT  Identity s a = s -> Identity (a, s)
 ```
