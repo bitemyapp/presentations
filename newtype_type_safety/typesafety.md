@@ -160,7 +160,7 @@ server = Webserver
 - ```haskell
 -- assume appropriate deriving
 data Blah = Woot | Alt { access :: Int }
-λ> :t access
+Prelude> :t access
 access :: Blah -> Int
 ```
 
@@ -169,7 +169,7 @@ access :: Blah -> Int
 # Record syntax is sorta dangerous
 
 - ```haskell
-λ> blah Woot
+Prelude> blah Woot
 *** Exception: No match in record
 selector blah
 ```
@@ -189,10 +189,10 @@ selector blah
 ```haskell
 newtype AltProxy = AltProxy { access :: Int }
 data Blah = Woot | Alt AltProxy
-λ> :t access
+Prelude> :t access
 access :: AltProxy -> Int
 
-λ> blah Woot
+Prelude> blah Woot
 -- this is now a type error
 -- as Go^H^H SPJ intended.
 ```
